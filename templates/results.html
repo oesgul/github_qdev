@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block title %}Results - Image Recognition App{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="text-center mb-4">
+            <h2>
+                <i class="fas fa-search text-success me-2"></i>
+                Recognition Results
+            </h2>
+            <p class="text-muted">Here's what our AI found in your image</p>
+        </div>
+
+        <div class="card shadow-lg">
+            <div class="card-body p-4">
+                <div class="row">
+                    <!-- Image Display -->
+                    <div class="col-md-6 mb-4">
+                        <h5 class="mb-3">
+                            <i class="fas fa-image me-2"></i>Your Image
+                        </h5>
+                        <div class="text-center">
+                            <img src="{{ image }}" alt="Uploaded image" class="image-preview">
+                        </div>
+                    </div>
+
+                    <!-- Predictions -->
+                    <div class="col-md-6">
+                        <h5 class="mb-3">
+                            <i class="fas fa-brain me-2"></i>Top Predictions
+                        </h5>
+                        
+                        {% for prediction in predictions %}
+                        <div class="prediction-card mb-3 p-3 border rounded">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="mb-0">
+                                    <span class="badge bg-primary me-2">{{ prediction.rank }}</span>
+                                    {{ prediction.label }}
+                                </h6>
+                                <span class="badge bg-{% if prediction.confidence > 0.5 %}success{% elif prediction.confidence > 0.2 %}warning{% else %}danger{% endif %}">
+                                    {{ prediction.percentage }}
+                                </span>
+                            </div>
+                            <div class="confidence-bar">
+                                <div class="confidence-fill bg-{% if prediction.confidence > 0.5 %}success{% elif prediction.confidence > 0.2 %}warning{% else %}danger{% endif %}" 
+                                     style="width: {{ prediction.confidence * 100 }}%"></div>
+                            </div>
+                        </div>
+                        {% endfor %}
+
+                        <div class="mt-4">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Predictions are based on the ResNet50 model trained on ImageNet dataset.
+                                Confidence scores indicate how certain the model is about each prediction.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="text-center mt-4">
+            <a href="{{ url_for('index') }}" class="btn btn-primary btn-lg me-3">
+                <i class="fas fa-upload me-2"></i>
+                Analyze Another Image
+            </a>
+            <button onclick="downloadResults()" class="btn btn-outline-secondary btn-lg">
+                <i class="fas fa-download me-2"></i>
+                Download Results
+            </button>
+        </div>
+
+        <!-- Additional Information -->
+        <div class="row mt-5">
+            <div class="col-md-4 text-center">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <i class="fas fa-chart-line fa-2x text-info mb-3"></i>
+                        <h6>Accuracy</h6>
+                        <p class="text-muted small">
+                            ResNet50 achieves top-5 accuracy of 92.1% on ImageNet validation set
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 text-center">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <i class="fas fa-database fa-2x text-warning mb-3"></i>
+                        <h6>Training Data</h6>
+                        <p class="text-muted small">
+                            Trained on ImageNet dataset with 1.2M images across 1,000 categories
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 text-center">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <i class="fas fa-cogs fa-2x text-success mb-3"></i>
+                        <h6>Model Architecture</h6>
+                        <p class="text-muted small">
+                            Deep residual network with 50 layers and skip connections
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function downloadResults() {
+    const predictions = {{ predictions | tojsonfilter }};
+    const resultsText = predictions.map(p => 
+        `${p.rank}. ${p.label}: ${p.percentage}`
+    ).join('\n');
+    
+    const blob = new Blob([
+        'Image Recognition Results\n',
+        '========================\n\n',
+        resultsText,
+        '\n\nGenerated by Image Recognition App\n',
+        'Powered by ResNet50 and TensorFlow'
+    ], { type: 'text/plain' });
+    
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'recognition_results.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+// Add animation to prediction cards
+document.addEventListener('DOMContentLoaded', function() {
+    const cards = document.querySelectorAll('.prediction-card');
+    cards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        
+        setTimeout(() => {
+            card.style.transition = 'all 0.5s ease';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, index * 100);
+    });
+});
+</script>
+{% endblock %}

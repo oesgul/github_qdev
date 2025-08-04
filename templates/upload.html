@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}Upload - Image Recognition App{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="text-center mb-4">
+            <h2>
+                <i class="fas fa-upload text-primary me-2"></i>
+                Upload Image
+            </h2>
+            <p class="text-muted">Select an image file to analyze</p>
+        </div>
+
+        <div class="card shadow">
+            <div class="card-body p-4">
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="file" class="form-label">Choose Image File</label>
+                        <input type="file" class="form-control" id="file" name="file" 
+                               accept="image/*" required>
+                        <div class="form-text">
+                            Supported formats: PNG, JPG, JPEG, GIF, BMP, WebP (Max: 16MB)
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-search me-2"></i>
+                            Analyze Image
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="text-center mt-4">
+            <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>
+                Back to Home
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const fileInput = document.getElementById('file');
+    const submitButton = form.querySelector('button[type="submit"]');
+    
+    // Preview selected file
+    fileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                showError('Please select an image file.');
+                fileInput.value = '';
+                return;
+            }
+            
+            // Validate file size
+            if (file.size > 16 * 1024 * 1024) {
+                showError('File size must be less than 16MB.');
+                fileInput.value = '';
+                return;
+            }
+            
+            // Show file info
+            const fileInfo = document.createElement('div');
+            fileInfo.className = 'alert alert-info mt-2';
+            fileInfo.innerHTML = `
+                <i class="fas fa-file-image me-2"></i>
+                Selected: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)
+            `;
+            
+            // Remove existing file info
+            const existingInfo = form.querySelector('.alert-info');
+            if (existingInfo) {
+                existingInfo.remove();
+            }
+            
+            // Add new file info
+            fileInput.parentNode.appendChild(fileInfo);
+        }
+    });
+    
+    // Handle form submission
+    form.addEventListener('submit', function(e) {
+        if (!fileInput.files[0]) {
+            e.preventDefault();
+            showError('Please select a file first.');
+            return;
+        }
+        
+        // Show loading state
+        submitButton.disabled = true;
+        submitButton.innerHTML = `
+            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+            Processing...
+        `;
+    });
+});
+</script>
+{% endblock %}
